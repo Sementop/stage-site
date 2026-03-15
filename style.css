@@ -22,8 +22,8 @@ span {
 
 /* 2. ШАПКА */
 header {
-    background: rgba(0, 0, 0, 0.8);
-    height: 80px;
+    background: rgba(0, 0, 0, 0.9);
+    min-height: 80px; /* Используем min-height, так как иконки 64px */
     display: flex;
     align-items: center;
     position: fixed;
@@ -33,7 +33,8 @@ header {
     border-bottom: 2px solid #FF8C00;
 }
 
-header .container {
+/* Флекс-контейнер для распределения элементов */
+.header-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -49,6 +50,8 @@ nav ul {
     list-style: none;
     display: flex;
     gap: 30px;
+    margin: 0;
+    padding: 0;
 }
 
 nav ul li a {
@@ -63,16 +66,34 @@ nav ul li a:hover {
     color: #FF8C00;
 }
 
+/* ПРАВЫЙ БЛОК С ИКОНКАМИ */
+.header-socials {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Расстояние между PNG кнопками */
+}
+
+.header-socials img {
+    width: 64px;  /* Твой размер 64x64 */
+    height: 64px;
+    transition: 0.3s;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+}
+
+.header-socials img:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 10px #FF8C00);
+}
+
 /* 3. ГЛАВНЫЙ ЭКРАН */
 .hero {
-    min-height: 100vh;
-    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+    height: 100vh;
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
                 url('assets/img/hero-bg.jpg') no-repeat center center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 100px 0 50px;
 }
 
 .stats-container {
@@ -111,10 +132,7 @@ nav ul li a:hover {
     color: #ccc;
 }
 
-.hero-buttons {
-    margin-bottom: 40px;
-}
-
+/* КНОПКА С ПУЛЬСАЦИЕЙ */
 .btn-main {
     display: inline-block;
     background-color: #FF8C00;
@@ -125,70 +143,22 @@ nav ul li a:hover {
     border-radius: 5px;
     font-size: 18px;
     transition: 0.3s;
-    box-shadow: 0 5px 15px rgba(255, 140, 0, 0.3);
+    position: relative;
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.4);
+    animation: pulse-orange 2s infinite;
 }
 
 .btn-main:hover {
     background-color: #e67e00;
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(255, 140, 0, 0.5);
+    box-shadow: 0 0 30px rgba(255, 140, 0, 0.7);
+    animation: none;
 }
 
-/* МОНИТОРИНГ */
-.monitoring-box {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.server-item {
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 25px 20px;
-    border-radius: 12px;
-    width: 320px;
-    text-align: left;
-    backdrop-filter: blur(5px);
-}
-
-.server-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.server-name {
-    font-weight: bold;
-    font-size: 18px;
-    text-transform: uppercase;
-}
-
-.server-online {
-    font-weight: bold;
-    color: #FF8C00;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #FF8C00, #ffae42);
-    transition: width 1.5s ease-in-out;
-}
-
-.nexus-coming {
-    opacity: 0.7;
-    border-style: dashed;
+@keyframes pulse-orange {
+    0% { box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.7); }
+    70% { box-shadow: 0 0 0 20px rgba(255, 140, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 140, 0, 0); }
 }
 
 /* 4. ПРЕИМУЩЕСТВА */
@@ -219,17 +189,25 @@ nav ul li a:hover {
     text-align: center;
     border-radius: 15px;
     border-bottom: 4px solid #333;
-    transition: 0.3s;
+    transition: all 0.4s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .feature-card:hover {
     border-color: #FF8C00;
-    transform: translateY(-10px);
+    background: #2a2a2a;
+    transform: translateY(-12px);
+    box-shadow: 0 10px 30px rgba(255, 140, 0, 0.25); 
 }
 
 .feature-card img {
     width: 80px;
     margin-bottom: 20px;
+    transition: 0.3s;
+}
+
+.feature-card:hover img {
+    transform: scale(1.1);
 }
 
 .feature-card h3 {
@@ -244,42 +222,21 @@ nav ul li a:hover {
 
 /* 5. ПОДВАЛ */
 footer {
-    padding: 50px 0;
+    padding: 40px 0;
     background: #000;
     text-align: center;
     border-top: 1px solid #222;
 }
 
-.social-links {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-}
-
-.social-links img {
-    width: 30px;
-    filter: grayscale(1);
-    transition: 0.3s;
-}
-
-.social-links img:hover {
-    filter: grayscale(0);
-    transform: scale(1.2);
-}
-
 /* 6. АДАПТИВНОСТЬ */
-@media (max-width: 768px) {
-    .hero-content h1 {
-        font-size: 45px;
-    }
+@media (max-width: 992px) {
     nav ul {
-        display: none;
-    }
-    .features-grid {
-        grid-template-columns: 1fr;
-    }
-    .server-item {
-        width: 100%;
+        display: none; /* Прячем текст на средних экранах, чтобы иконки влезли */
     }
 }
+
+@media (max-width: 768px) {
+    .header-socials img {
+        width: 48px; /* Чуть уменьшаем на мобилках, чтобы не ломать верстку */
+        height: 48px;
+    }
