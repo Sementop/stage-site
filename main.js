@@ -9,7 +9,7 @@ const downloadsRef = database.ref('total_downloads');
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadDisplay = document.getElementById('download-count');
 
-// Синхронизация счетчика с базой данных
+// Синхронизация счетчика скачиваний
 downloadsRef.on('value', (snapshot) => {
     const count = snapshot.val();
     if (count !== null) {
@@ -19,34 +19,64 @@ downloadsRef.on('value', (snapshot) => {
     }
 });
 
-// Клик по кнопке с защитой и КД 12 часов
+// Клик по кнопке скачивания
 if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
         const lastDownload = localStorage.getItem('stage_last_download_time');
-        const now = new Date().getTime(); // Текущее время в миллисекундах
-        const twelveHours = 12 * 60 * 60 * 1000; // 12 часов в миллисекундах
+        const now = new Date().getTime();
+        const twelveHours = 12 * 60 * 60 * 1000;
 
-        // Если кликов еще не было ИЛИ прошло больше 12 часов
         if (!lastDownload || (now - lastDownload) > twelveHours) {
-            
-            // Увеличиваем счетчик в базе
             downloadsRef.transaction((currentValue) => {
                 return (currentValue || 0) + 1;
             });
-
-            // Сохраняем текущее время клика
             localStorage.setItem('stage_last_download_time', now);
-            console.log('Честное скачивание засчитано. Следующий засчитанный клик доступен через 12 часов.');
-            
-        } else {
-            // Расчет оставшегося времени для логов (необязательно, но полезно)
-            const timeLeft = Math.ceil((twelveHours - (now - lastDownload)) / (1000 * 60 * 60));
-            console.log(`Повторный клик слишком рано. Подождите еще примерно ${timeLeft} ч.`);
         }
     });
 }
 
-// 1. Плавная прокрутка
+// --- МОНИТОРИНГ СЕРВЕРА (ВАРИАНТ 3) ---
+async function updateServerStatus() {
+    const ip = "188.127.241.74";
+    const port = "3942";
+    const onlineText = document.getElementById('stage-online');
+    const progressBar = document.getElementById('stage-bar');
+
+    if (!onlineText || !progressBar) return;
+
+    try {
+        // Пробуем альтернативный API, который часто лучше работает с мобильными хостами
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://api.samp-servers.net/v2/server/' + ip + ':' + port)}`);
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const json = await response.json();
+        const data = JSON.parse(json.contents);
+
+        if (data && data.online === true) {
+            const current = parseInt(data.players) || 0;
+            const max = parseInt(data.maxplayers) || 1000;
+            const percent = (current / max) * 100;
+
+            onlineText.innerText = `${current} / ${max}`;
+            progressBar.style.width = `${percent}%`;
+        } else {
+            onlineText.innerText = "OFFLINE";
+            progressBar.style.width = "0%";
+        }
+    } catch (error) {
+        console.warn("Ошибка сетевого запроса. Возможно, блокировка на стороне браузера/сервера.");
+        onlineText.innerText = "OFFLINE";
+        progressBar.style.width = "0%";
+    }
+}
+
+// Запускаем мониторинг
+updateServerStatus();
+// Опрашиваем раз в минуту, чтобы не словить бан по IP от прокси
+setInterval(updateServerStatus, 60000);
+
+// Плавная прокрутка
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -60,7 +90,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// 2. Анимация появления блоков при скролле
+// Анимация появления блоков
 const revealElements = document.querySelectorAll('.feature-card');
 const revealOnScroll = () => {
     const triggerBottom = window.innerHeight / 5 * 4;
@@ -81,7 +111,7 @@ revealElements.forEach(el => {
 
 window.addEventListener('scroll', revealOnScroll);
 
-// 3. Эффект шапки
+// Эффект шапки
 const header = document.querySelector('header');
 window.addEventListener('scroll', () => {
     if (window.scrollY > 50) {
