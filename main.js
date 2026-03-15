@@ -9,7 +9,7 @@ const downloadsRef = database.ref('total_downloads');
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadDisplay = document.getElementById('download-count');
 
-// Синхронизация счетчика скачиваний
+// Синхронизация счетчика с базой данных
 downloadsRef.on('value', (snapshot) => {
     const count = snapshot.val();
     if (count !== null) {
@@ -19,11 +19,11 @@ downloadsRef.on('value', (snapshot) => {
     }
 });
 
-// Клик по кнопке скачивания
+// Клик по кнопке с защитой и КД 12 часов
 if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
         const lastDownload = localStorage.getItem('stage_last_download_time');
-        const now = new Date().getTime();
+        const now = new Date().getTime(); 
         const twelveHours = 12 * 60 * 60 * 1000;
 
         if (!lastDownload || (now - lastDownload) > twelveHours) {
@@ -35,44 +35,7 @@ if (downloadBtn) {
     });
 }
 
-// --- МОНИТОРИНГ СЕРВЕРА (ИСПРАВЛЕННЫЙ) ---
-async function updateServerStatus() {
-    const ip = "188.127.241.74";
-    const port = "3942";
-    const onlineText = document.getElementById('stage-online');
-    const progressBar = document.getElementById('stage-bar');
-
-    try {
-        // Используем прокси allorigins, чтобы обойти ошибку "Failed to fetch" на локалке
-        const apiUrl = `https://api.samp-servers.net/v2/server/${ip}:${port}`;
-        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`);
-        const json = await response.json();
-        
-        // allorigins возвращает данные в поле contents в виде строки, парсим её
-        const data = JSON.parse(json.contents);
-
-        if (data && data.online !== undefined) {
-            const current = data.players;
-            const max = data.maxplayers;
-            const percent = (current / max) * 100;
-
-            onlineText.innerText = `${current} / ${max}`;
-            progressBar.style.width = `${percent}%`;
-        } else {
-            onlineText.innerText = "OFFLINE";
-            progressBar.style.width = `0%`;
-        }
-    } catch (error) {
-        console.log("Ошибка мониторинга, сервер возможно недоступен через API");
-        onlineText.innerText = "OFFLINE";
-        progressBar.style.width = `0%`;
-    }
-}
-
-updateServerStatus();
-setInterval(updateServerStatus, 30000);
-
-// Плавная прокрутка
+// 1. Плавная прокрутка
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -86,8 +49,9 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Анимация появления блоков
+// 2. Анимация появления блоков при скролле
 const revealElements = document.querySelectorAll('.feature-card');
+
 const revealOnScroll = () => {
     const triggerBottom = window.innerHeight / 5 * 4;
     revealElements.forEach(el => {
@@ -99,20 +63,25 @@ const revealOnScroll = () => {
     });
 };
 
+// Начальные настройки карточек
 revealElements.forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(30px)';
     el.style.transition = 'all 0.6s ease-out';
 });
 
+// Запуск проверки сразу и при скролле
+revealOnScroll();
 window.addEventListener('scroll', revealOnScroll);
 
-// Эффект шапки
+// 3. Эффект шапки (фикс прозрачности при прокрутке)
 const header = document.querySelector('header');
 window.addEventListener('scroll', () => {
-    if (window.scrollY > 50) {
+    if (window.scrollY > 20) {
         header.style.background = 'rgba(0, 0, 0, 0.95)';
+        header.style.height = '70px'; // Немного сужаем при скролле для стиля
     } else {
         header.style.background = 'rgba(0, 0, 0, 0.8)';
+        header.style.height = '80px';
     }
 });
