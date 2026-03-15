@@ -1,4 +1,3 @@
-// --- КОНФИГ FIREBASE ---
 const firebaseConfig = {
     databaseURL: "https://stagesite-2666a-default-rtdb.firebaseio.com/"
 };
@@ -9,32 +8,69 @@ const downloadsRef = database.ref('total_downloads');
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadDisplay = document.getElementById('download-count');
 
-// Синхронизация счетчика скачиваний
 downloadsRef.on('value', (snapshot) => {
     const count = snapshot.val();
-    if (count !== null) {
-        if (downloadDisplay) downloadDisplay.innerText = count.toLocaleString();
-    } else {
-        downloadsRef.set(0); 
+    if (count !== null && downloadDisplay) {
+        downloadDisplay.innerText = count.toLocaleString();
     }
 });
 
-// Клик по кнопке скачивания
 if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
         const lastDownload = localStorage.getItem('stage_last_download_time');
         const now = new Date().getTime();
-        const twelveHours = 12 * 60 * 60 * 1000;
-
-        if (!lastDownload || (now - lastDownload) > twelveHours) {
-            downloadsRef.transaction((currentValue) => {
-                return (currentValue || 0) + 1;
-            });
+        if (!lastDownload || (now - lastDownload) > (12 * 60 * 60 * 1000)) {
+            downloadsRef.transaction(v => (v || 0) + 1);
             localStorage.setItem('stage_last_download_time', now);
         }
     });
 }
 
+// МОНИТОРИНГ
+async function updateServerStatus() {
+    const onlineText = document.getElementById('stage-online');
+    const progressBar = document.getElementById('stage-bar');
+    if (!onlineText) return;
+
+    try {
+        const ip = "188.127.241.74";
+        const port = "3942";
+        // Используем более стабильный прокси
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://api.samp-servers.net/v2/server/'+ip+':'+port)}`);
+        const json = await response.json();
+        const data = JSON.parse(json.contents);
+
+        if (data && data.online) {
+            const players = parseInt(data.players) || 0;
+            const max = parseInt(data.maxplayers) || 1000;
+            onlineText.innerText = `${players} / ${max}`;
+            progressBar.style.width = `${(players / max) * 100}%`;
+        } else {
+            onlineText.innerText = "OFFLINE";
+        }
+    } catch (e) {
+        onlineText.innerText = "OFFLINE";
+    }
+}
+
+updateServerStatus();
+setInterval(updateServerStatus, 60000);
+
+// Анимации
+const revealElements = document.querySelectorAll('.feature-card');
+window.addEventListener('scroll', () => {
+    revealElements.forEach(el => {
+        if (el.getBoundingClientRect().top < window.innerHeight - 100) {
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+        }
+    });
+});
+revealElements.forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = '0.6s';
+});
 // --- МОНИТОРИНГ СЕРВЕРА (ВАРИАНТ 3) ---
 async function updateServerStatus() {
     const ip = "188.127.241.74";
