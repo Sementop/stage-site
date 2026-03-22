@@ -33,18 +33,23 @@ if (downloadBtn) {
     });
 }
 
-// --- ПЕРЕМЕННАЯ СОСТОЯНИЯ АНАЛИЗА ---
+// --- СОСТОЯНИЕ АНАЛИЗА ---
 let analysisFinished = false;
 
-// --- УЛУЧШЕННАЯ ПРОВЕРКА IP + VPN ---
+// --- ПРОВЕРКА IP + VPN (ОПТИМИЗИРОВАННАЯ) ---
 async function checkVPN() {
     const ipLabel = document.getElementById('user-ip');
     const vpnLabel = document.getElementById('vpn-status');
     
     try {
-        // Достаем IP через Cloudflare
-        const cfRes = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
+        // Используем более быстрый таймаут, чтобы не вешать загрузку
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const cfRes = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { signal: controller.signal });
         const cfText = await cfRes.text();
+        clearTimeout(timeoutId);
+
         const ipMatch = cfText.match(/ip=([^\s]+)/);
         const userIP = ipMatch ? ipMatch[1] : null;
 
@@ -72,28 +77,27 @@ async function checkVPN() {
                 }
             } catch (e) {
                 if (vpnLabel) {
-                    vpnLabel.innerText = "ЗАЩИЩЕНО";
+                    vpnLabel.innerText = "АКТИВНА";
                     vpnLabel.style.color = "#00FF00";
                 }
             }
         }
     } catch (error) {
         if (ipLabel) ipLabel.innerText = "ДИНАМИЧЕСКИЙ";
-        if (vpnLabel) vpnLabel.innerText = "АКТИВНА";
+        if (vpnLabel) vpnLabel.innerText = "ЗАЩИЩЕНО";
     } finally {
-        // ВАЖНО: Разрешаем завершение загрузки
         analysisFinished = true;
     }
 }
 
-// --- ЛОГИКА ЭКРАНА ЗАЩИТЫ (СИНХРОНИЗАЦИЯ) ---
+// --- ЛОГИКА ЭКРАНА ЗАЩИТЫ ---
 window.addEventListener('DOMContentLoaded', () => {
     const shield = document.getElementById('ddos-shield');
     const percentText = document.getElementById('shield-percent');
     const nodeId = document.getElementById('node-id');
     
-    // Запускаем анализ параллельно
-    checkVPN();
+    // Запускаем анализ отдельно от потока отрисовки
+    setTimeout(checkVPN, 100);
 
     if (nodeId) {
         const chars = '0123456789ABCDEF';
@@ -104,14 +108,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let progress = 0;
     const interval = setInterval(() => {
-        // Если анализ еще идет, не даем прогрессу прыгнуть выше 95%
-        if (!analysisFinished && progress >= 95) {
-            progress = 95;
+        // Логика мягкого торможения
+        if (!analysisFinished && progress >= 90) {
+            // Плавно замедляемся до 98%, но не останавливаемся совсем, чтобы анимация жила
+            if (progress < 98) progress += 0.2; 
         } else {
-            progress += Math.floor(Math.random() * 4) + 1; 
+            progress += Math.floor(Math.random() * 3) + 1;
         }
         
-        // Пускаем только когда и 100% и анализ готов
         if (progress >= 100 && analysisFinished) {
             progress = 100;
             clearInterval(interval);
@@ -121,11 +125,11 @@ window.addEventListener('DOMContentLoaded', () => {
                     shield.style.opacity = '0';
                     setTimeout(() => { shield.style.display = 'none'; }, 800);
                 }
-            }, 1000); 
+            }, 1000);
         }
         
-        if (percentText) percentText.innerText = Math.min(progress, 100) + "%";
-    }, 100);
+        if (percentText) percentText.innerText = Math.floor(progress) + "%";
+    }, 80); // Ускорил интервал для плавности анимации
 });
 
 // 1. Плавная прокрутка
@@ -133,9 +137,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
-        }
+        if (target) window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
     });
 });
 
@@ -165,12 +167,7 @@ if (revealElements.length > 0) {
 const header = document.querySelector('header');
 if (header) {
     window.addEventListener('scroll', () => {
-        if (window.scrollY > 20) {
-            header.style.background = 'rgba(0, 0, 0, 0.95)';
-            header.style.height = '70px'; 
-        } else {
-            header.style.background = 'rgba(0, 0, 0, 0.8)';
-            header.style.height = '80px';
-        }
+        header.style.background = window.scrollY > 20 ? 'rgba(0, 0, 0, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+        header.style.height = window.scrollY > 20 ? '70px' : '80px';
     });
 }
