@@ -33,16 +33,17 @@ if (downloadBtn) {
     });
 }
 
-// --- СОСТОЯНИЕ АНАЛИЗА ---
-let isAnalysisReady = false;
+// --- СОСТОЯНИЕ ПРОВЕРКИ ---
+let vpnCheckComplete = false;
 
-// --- УЛЬТРА-ПРОВЕРКА IP + VPN (БЕЗ ОШИБОК В РФ) ---
+// --- НЕУБИВАЕМАЯ ПРОВЕРКА IP + VPN ---
 async function checkVPN() {
     const ipLabel = document.getElementById('user-ip');
     const vpnLabel = document.getElementById('vpn-status');
     
+    if (ipLabel) ipLabel.innerText = "АНАЛИЗ СЕТИ...";
+
     try {
-        // 1. Получаем IP через Cloudflare (самый стабильный метод)
         const cfRes = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
         const cfText = await cfRes.text();
         const ipMatch = cfText.match(/ip=([^\s]+)/);
@@ -51,7 +52,6 @@ async function checkVPN() {
         if (userIP) {
             ipLabel.innerText = userIP;
 
-            // 2. Проверка VPN
             try {
                 const vpnRes = await fetch(`https://ipapi.co/${userIP}/json/`);
                 const vpnData = await vpnRes.json();
@@ -59,7 +59,9 @@ async function checkVPN() {
                 const isVpn = vpnData.org && (
                     vpnData.org.toLowerCase().includes('vpn') || 
                     vpnData.org.toLowerCase().includes('proxy') ||
-                    vpnData.org.toLowerCase().includes('hosting')
+                    vpnData.org.toLowerCase().includes('hosting') ||
+                    vpnData.org.toLowerCase().includes('google') ||
+                    vpnData.org.toLowerCase().includes('amazon')
                 );
 
                 if (vpnLabel) {
@@ -72,7 +74,6 @@ async function checkVPN() {
                     }
                 }
             } catch (e) {
-                // Если API проверки заблочен, пишем АКТИВНА
                 if (vpnLabel) {
                     vpnLabel.innerText = "АКТИВНА";
                     vpnLabel.style.color = "#00FF00";
@@ -80,21 +81,30 @@ async function checkVPN() {
             }
         }
     } catch (error) {
-        if (ipLabel) ipLabel.innerText = "ДИНАМИЧЕСКИЙ";
-        if (vpnLabel) vpnLabel.innerText = "ЗАЩИЩЕНО";
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const d = await res.json();
+            if (ipLabel) ipLabel.innerText = d.ip;
+            if (vpnLabel) {
+                vpnLabel.innerText = "ЗАЩИЩЕНО";
+                vpnLabel.style.color = "#00FF00";
+            }
+        } catch (e) {
+            if (ipLabel) ipLabel.innerText = "СКРЫТ (NAT)";
+            if (vpnLabel) vpnLabel.innerText = "БЕЗОПАСНО";
+        }
     } finally {
-        // ПОДТВЕРЖДАЕМ ГОТОВНОСТЬ
-        isAnalysisReady = true;
+        // Сигнализируем, что данные получены и записаны в HTML
+        vpnCheckComplete = true;
     }
 }
 
-// --- ЛОГИКА ЭКРАНА ЗАЩИТЫ (СИНХРОНИЗАЦИЯ) ---
+// --- ЛОГИКА ЭКРАНА ЗАЩИТЫ (СИНХРОНИЗИРОВАННАЯ) ---
 window.addEventListener('DOMContentLoaded', () => {
     const shield = document.getElementById('ddos-shield');
     const percentText = document.getElementById('shield-percent');
     const nodeId = document.getElementById('node-id');
     
-    // Запускаем анализ сразу
     checkVPN();
 
     if (nodeId) {
@@ -106,29 +116,28 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let progress = 0;
     const interval = setInterval(() => {
-        // Если анализ еще не готов, тормозим на 94%
-        if (!isAnalysisReady && progress >= 94) {
-            progress = 94;
+        // Если данные еще не пришли, прогресс "зависает" на 90%
+        if (!vpnCheckComplete && progress >= 90) {
+            progress = 90;
         } else {
-            progress += Math.floor(Math.random() * 5) + 2;
+            progress += Math.floor(Math.random() * 5) + 2; 
         }
         
-        if (progress >= 100 && isAnalysisReady) {
+        if (progress >= 100 && vpnCheckComplete) {
             progress = 100;
             clearInterval(interval);
-            
             setTimeout(() => {
                 if (shield) {
                     shield.style.opacity = '0';
                     setTimeout(() => { shield.style.display = 'none'; }, 800);
                 }
-            }, 1000);
+            }, 1000); 
         }
         if (percentText) percentText.innerText = Math.min(progress, 100) + "%";
     }, 120);
 });
 
-// --- ОСТАЛЬНАЯ ЛОГИКА (Плавная прокрутка и анимации) ---
+// 1. Плавная прокрутка
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -139,6 +148,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// 2. Анимация появления блоков
 const revealElements = document.querySelectorAll('.feature-card');
 if (revealElements.length > 0) {
     const revealOnScroll = () => {
@@ -160,10 +170,16 @@ if (revealElements.length > 0) {
     revealOnScroll();
 }
 
+// 3. Эффект шапки
 const header = document.querySelector('header');
 if (header) {
     window.addEventListener('scroll', () => {
-        header.style.background = window.scrollY > 20 ? 'rgba(0, 0, 0, 0.95)' : 'rgba(0, 0, 0, 0.8)';
-        header.style.height = window.scrollY > 20 ? '70px' : '80px';
+        if (window.scrollY > 20) {
+            header.style.background = 'rgba(0, 0, 0, 0.95)';
+            header.style.height = '70px'; 
+        } else {
+            header.style.background = 'rgba(0, 0, 0, 0.8)';
+            header.style.height = '80px';
+        }
     });
-}
+        }
