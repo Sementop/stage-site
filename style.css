@@ -20,10 +20,98 @@ span {
     color: #FF8C00;
 }
 
+/* --- СИСТЕМА ЗАЩИТЫ STAGE PROTECTION (ANTI-DDoS + VPN DETECTOR) --- */
+#ddos-shield {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0d0d0d;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.8s ease;
+}
+
+.shield-content {
+    text-align: center;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.shield-logo img {
+    height: 100px;
+    margin-bottom: 30px;
+    filter: drop-shadow(0 0 15px rgba(255, 140, 0, 0.4));
+}
+
+.shield-status p {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #888;
+    margin: 10px 0;
+    text-transform: uppercase;
+}
+
+#shield-percent {
+    font-size: 28px;
+    font-weight: bold;
+    color: #FF8C00;
+    font-family: 'Courier New', monospace;
+}
+
+/* Стили для статусов детектора */
+#user-ip {
+    color: #eee;
+    font-weight: bold;
+}
+
+#vpn-status.status-safe {
+    color: #00FF00 !important; /* Зеленый если чисто */
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+}
+
+#vpn-status.status-warn {
+    color: #FF0000 !important; /* Красный если VPN */
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    font-weight: bold;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(255, 140, 0, 0.1);
+    border-top: 3px solid #FF8C00;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    animation: spin-shield 1s linear infinite;
+}
+
+@keyframes spin-shield {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.shield-footer {
+    margin-top: 30px;
+    font-size: 11px;
+    color: #444;
+    line-height: 1.8;
+    text-transform: uppercase;
+}
+
+.shield-footer span {
+    color: #666;
+    font-weight: bold;
+}
+/* ---------------------------------------------------- */
+
 /* 2. ШАПКА */
 header {
     background: rgba(0, 0, 0, 0.9);
-    min-height: 80px; /* Используем min-height, так как иконки 64px */
+    min-height: 80px; 
     display: flex;
     align-items: center;
     position: fixed;
@@ -33,7 +121,6 @@ header {
     border-bottom: 2px solid #FF8C00;
 }
 
-/* Флекс-контейнер для распределения элементов */
 .header-flex {
     display: flex;
     justify-content: space-between;
@@ -66,15 +153,14 @@ nav ul li a:hover {
     color: #FF8C00;
 }
 
-/* ПРАВЫЙ БЛОК С ИКОНКАМИ */
 .header-socials {
     display: flex;
     align-items: center;
-    gap: 15px; /* Расстояние между PNG кнопками */
+    gap: 15px; 
 }
 
 .header-socials img {
-    width: 64px;  /* Твой размер 64x64 */
+    width: 64px;  
     height: 64px;
     transition: 0.3s;
     filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
@@ -132,7 +218,6 @@ nav ul li a:hover {
     color: #ccc;
 }
 
-/* КНОПКА С ПУЛЬСАЦИЕЙ */
 .btn-main {
     display: inline-block;
     background-color: #FF8C00;
@@ -231,12 +316,19 @@ footer {
 /* 6. АДАПТИВНОСТЬ */
 @media (max-width: 992px) {
     nav ul {
-        display: none; /* Прячем текст на средних экранах, чтобы иконки влезли */
+        display: none; 
     }
 }
 
 @media (max-width: 768px) {
     .header-socials img {
-        width: 48px; /* Чуть уменьшаем на мобилках, чтобы не ломать верстку */
+        width: 48px; 
         height: 48px;
+    }
+    .hero-content h1 {
+        font-size: 45px;
+    }
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
     }
