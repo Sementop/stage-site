@@ -34,28 +34,24 @@ if (downloadBtn) {
 }
 
 // --- СОСТОЯНИЕ АНАЛИЗА ---
-let analysisFinished = false;
+let isAnalysisReady = false;
 
-// --- ПРОВЕРКА IP + VPN (ОПТИМИЗИРОВАННАЯ) ---
+// --- УЛЬТРА-ПРОВЕРКА IP + VPN (БЕЗ ОШИБОК В РФ) ---
 async function checkVPN() {
     const ipLabel = document.getElementById('user-ip');
     const vpnLabel = document.getElementById('vpn-status');
     
     try {
-        // Используем более быстрый таймаут, чтобы не вешать загрузку
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const cfRes = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { signal: controller.signal });
+        // 1. Получаем IP через Cloudflare (самый стабильный метод)
+        const cfRes = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
         const cfText = await cfRes.text();
-        clearTimeout(timeoutId);
-
         const ipMatch = cfText.match(/ip=([^\s]+)/);
         const userIP = ipMatch ? ipMatch[1] : null;
 
         if (userIP) {
-            if (ipLabel) ipLabel.innerText = userIP;
+            ipLabel.innerText = userIP;
 
+            // 2. Проверка VPN
             try {
                 const vpnRes = await fetch(`https://ipapi.co/${userIP}/json/`);
                 const vpnData = await vpnRes.json();
@@ -76,6 +72,7 @@ async function checkVPN() {
                     }
                 }
             } catch (e) {
+                // Если API проверки заблочен, пишем АКТИВНА
                 if (vpnLabel) {
                     vpnLabel.innerText = "АКТИВНА";
                     vpnLabel.style.color = "#00FF00";
@@ -86,18 +83,19 @@ async function checkVPN() {
         if (ipLabel) ipLabel.innerText = "ДИНАМИЧЕСКИЙ";
         if (vpnLabel) vpnLabel.innerText = "ЗАЩИЩЕНО";
     } finally {
-        analysisFinished = true;
+        // ПОДТВЕРЖДАЕМ ГОТОВНОСТЬ
+        isAnalysisReady = true;
     }
 }
 
-// --- ЛОГИКА ЭКРАНА ЗАЩИТЫ ---
+// --- ЛОГИКА ЭКРАНА ЗАЩИТЫ (СИНХРОНИЗАЦИЯ) ---
 window.addEventListener('DOMContentLoaded', () => {
     const shield = document.getElementById('ddos-shield');
     const percentText = document.getElementById('shield-percent');
     const nodeId = document.getElementById('node-id');
     
-    // Запускаем анализ отдельно от потока отрисовки
-    setTimeout(checkVPN, 100);
+    // Запускаем анализ сразу
+    checkVPN();
 
     if (nodeId) {
         const chars = '0123456789ABCDEF';
@@ -108,15 +106,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let progress = 0;
     const interval = setInterval(() => {
-        // Логика мягкого торможения
-        if (!analysisFinished && progress >= 90) {
-            // Плавно замедляемся до 98%, но не останавливаемся совсем, чтобы анимация жила
-            if (progress < 98) progress += 0.2; 
+        // Если анализ еще не готов, тормозим на 94%
+        if (!isAnalysisReady && progress >= 94) {
+            progress = 94;
         } else {
-            progress += Math.floor(Math.random() * 3) + 1;
+            progress += Math.floor(Math.random() * 5) + 2;
         }
         
-        if (progress >= 100 && analysisFinished) {
+        if (progress >= 100 && isAnalysisReady) {
             progress = 100;
             clearInterval(interval);
             
@@ -127,21 +124,21 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             }, 1000);
         }
-        
-        if (percentText) percentText.innerText = Math.floor(progress) + "%";
-    }, 80); // Ускорил интервал для плавности анимации
+        if (percentText) percentText.innerText = Math.min(progress, 100) + "%";
+    }, 120);
 });
 
-// 1. Плавная прокрутка
+// --- ОСТАЛЬНАЯ ЛОГИКА (Плавная прокрутка и анимации) ---
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
-        if (target) window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
+        if (target) {
+            window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
+        }
     });
 });
 
-// 2. Анимация появления блоков
 const revealElements = document.querySelectorAll('.feature-card');
 if (revealElements.length > 0) {
     const revealOnScroll = () => {
@@ -163,7 +160,6 @@ if (revealElements.length > 0) {
     revealOnScroll();
 }
 
-// 3. Эффект шапки
 const header = document.querySelector('header');
 if (header) {
     window.addEventListener('scroll', () => {
