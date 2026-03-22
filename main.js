@@ -35,6 +35,80 @@ if (downloadBtn) {
     });
 }
 
+// --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ПРОВЕРКИ VPN И IP ---
+async function checkVPN() {
+    const ipLabel = document.getElementById('user-ip');
+    const vpnLabel = document.getElementById('vpn-status');
+    
+    try {
+        // Используем надежный API с поддержкой HTTPS и глубоким анализом security
+        const response = await fetch('https://ipwho.is/');
+        const data = await response.json();
+        
+        if (ipLabel) ipLabel.innerText = data.ip || "СКРЫТ";
+        
+        if (vpnLabel) {
+            // Проверяем vpn, proxy и tor одновременно через объект security
+            const isProxy = data.security && (data.security.proxy || data.security.vpn || data.security.tor);
+            
+            if (isProxy) {
+                vpnLabel.innerText = "ОБНАРУЖЕН";
+                vpnLabel.className = "status-warn";
+                vpnLabel.style.color = "#FF0000"; // Принудительно красный
+            } else {
+                vpnLabel.innerText = "НЕ ИСПОЛЬЗУЕТСЯ";
+                vpnLabel.className = "status-safe";
+                vpnLabel.style.color = "#00FF00"; // Принудительно зеленый
+            }
+        }
+    } catch (error) {
+        console.error("VPN Check Error:", error);
+        if (ipLabel) ipLabel.innerText = "ERROR";
+        if (vpnLabel) vpnLabel.innerText = "СБОЙ СЕТИ";
+    }
+}
+
+// --- ЛОГИКА ЭКРАНА ЗАЩИТЫ (STAGE PROTECTION) ---
+window.addEventListener('DOMContentLoaded', () => {
+    const shield = document.getElementById('ddos-shield');
+    const percentText = document.getElementById('shield-percent');
+    const nodeId = document.getElementById('node-id');
+    
+    // Запускаем проверку VPN сразу
+    checkVPN();
+
+    // Генерация случайного ID узла
+    if (nodeId) {
+        const chars = '0123456789ABCDEF';
+        let id = 'NODE-';
+        for (let i = 0; i < 8; i++) {
+            id += chars[Math.floor(Math.random() * 16)];
+        }
+        nodeId.innerText = id;
+    }
+
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 10) + 3; 
+        
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            
+            setTimeout(() => {
+                if (shield) {
+                    shield.style.opacity = '0';
+                    setTimeout(() => {
+                        shield.style.display = 'none';
+                    }, 800);
+                }
+            }, 1200); // Даем игроку время увидеть статус IP и VPN
+        }
+        
+        if (percentText) percentText.innerText = progress + "%";
+    }, 150);
+});
+
 // 1. Плавная прокрутка
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
@@ -51,37 +125,36 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 // 2. Анимация появления блоков при скролле
 const revealElements = document.querySelectorAll('.feature-card');
-
-const revealOnScroll = () => {
-    const triggerBottom = window.innerHeight / 5 * 4;
+if (revealElements.length > 0) {
+    const revealOnScroll = () => {
+        const triggerBottom = window.innerHeight / 5 * 4;
+        revealElements.forEach(el => {
+            const elTop = el.getBoundingClientRect().top;
+            if (elTop < triggerBottom) {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }
+        });
+    };
     revealElements.forEach(el => {
-        const elTop = el.getBoundingClientRect().top;
-        if (elTop < triggerBottom) {
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0)';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'all 0.6s ease-out';
+    });
+    revealOnScroll();
+    window.addEventListener('scroll', revealOnScroll);
+}
+
+// 3. Эффект шапки
+const header = document.querySelector('header');
+if (header) {
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) {
+            header.style.background = 'rgba(0, 0, 0, 0.95)';
+            header.style.height = '70px'; 
+        } else {
+            header.style.background = 'rgba(0, 0, 0, 0.8)';
+            header.style.height = '80px';
         }
     });
-};
-
-// Начальные настройки карточек
-revealElements.forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(30px)';
-    el.style.transition = 'all 0.6s ease-out';
-});
-
-// Запуск проверки сразу и при скролле
-revealOnScroll();
-window.addEventListener('scroll', revealOnScroll);
-
-// 3. Эффект шапки (фикс прозрачности при прокрутке)
-const header = document.querySelector('header');
-window.addEventListener('scroll', () => {
-    if (window.scrollY > 20) {
-        header.style.background = 'rgba(0, 0, 0, 0.95)';
-        header.style.height = '70px'; // Немного сужаем при скролле для стиля
-    } else {
-        header.style.background = 'rgba(0, 0, 0, 0.8)';
-        header.style.height = '80px';
-    }
-});
+}
