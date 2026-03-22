@@ -20,7 +20,7 @@ span {
     color: #FF8C00;
 }
 
-/* --- СИСТЕМА ЗАЩИТЫ STAGE PROTECTION (ANTI-DDoS + VPN DETECTOR) --- */
+/* --- СИСТЕМА ЗАЩИТЫ STAGE PROTECTION --- */
 #ddos-shield {
     position: fixed;
     top: 0;
@@ -62,23 +62,16 @@ span {
     font-family: 'Courier New', monospace;
 }
 
-/* Стили для статусов детектора */
 #user-ip {
     color: #eee;
     font-weight: bold;
 }
 
-#vpn-status.status-safe {
-    color: #00FF00 !important; /* Зеленый если чисто */
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+#vpn-status {
+    transition: color 0.3s ease;
 }
 
-#vpn-status.status-warn {
-    color: #FF0000 !important; /* Красный если VPN */
-    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    font-weight: bold;
-}
-
+/* ИСПРАВЛЕННЫЙ СПИННЕР (Крутится всегда) */
 .spinner {
     width: 60px;
     height: 60px;
@@ -86,7 +79,15 @@ span {
     border-top: 3px solid #FF8C00;
     border-radius: 50%;
     margin: 0 auto 20px;
+    /* Добавлены префиксы для совместимости */
+    -webkit-animation: spin-shield 1s linear infinite;
     animation: spin-shield 1s linear infinite;
+}
+
+/* Кроссбраузерная анимация */
+@-webkit-keyframes spin-shield {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
 }
 
 @keyframes spin-shield {
@@ -106,7 +107,6 @@ span {
     color: #666;
     font-weight: bold;
 }
-/* ---------------------------------------------------- */
 
 /* 2. ШАПКА */
 header {
@@ -119,6 +119,7 @@ header {
     top: 0;
     z-index: 1000;
     border-bottom: 2px solid #FF8C00;
+    transition: all 0.3s ease;
 }
 
 .header-flex {
@@ -331,4 +332,4 @@ footer {
     .features-grid {
         grid-template-columns: 1fr;
     }
-}
+    }
